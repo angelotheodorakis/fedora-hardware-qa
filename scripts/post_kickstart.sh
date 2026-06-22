@@ -2,8 +2,6 @@
 
 set -eux -o pipefail
 
-mode="$(grep -oP 'cpe.mode=\K(\w*)' /proc/cmdline)"
-
 # scripts from ISO
 cp /tmp/fedora_hwqual_testing.sh /usr/local/bin/fedora_hwqual_testing.sh
 cp /tmp/nvidia_setup.sh /usr/local/bin/nvidia_setup.sh

@@ -14,7 +14,7 @@ fi
 # Lets check if we have virtual machine (only needed for testing purposes)
 systemd-detect-virt && is_virtual=true || is_virtual=false
 
-nvidia_repo=$(grep -oP 'cpe.nvidia=\K(\w*)' /proc/cmdline) || nvidia_repo=
+nvidia_repo=$(grep -oP 'platform.nvidia=\K(\w*)' /proc/cmdline) || nvidia_repo=
 
 # Getting current OS details
 OS_name=$(awk -F= '/^ID=/{gsub(/"/, "", $2); print tolower($2)}' /etc/os-release)
