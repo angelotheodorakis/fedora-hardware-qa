@@ -11,7 +11,7 @@ The ISO is generated through automation and built on top of the Fedora Everythin
 
 We include in the ISO the following 4 files which can also be found on the root path of the ISO when mounted.
 
-![](/intern/wiki/_download/?title=938bbf03-858c-4b4f-b4fc-53d3bffaa5df&id=2744251&old=0&handle=GPRlVif29lCe1_IFAPrdTEEuqc0vbj8QAAAP)
+![](screenshots/custom-iso-file-structure.png)
 
 ### `fedora_hwqual_kickstart.cfg`
 Kickstart is an answer file which can be provided to a netinstaller and automate the steps otherwise performed by user selections (for example, system language, desktop environment etc)
