@@ -1,5 +1,7 @@
 # Fedora Hardware validation QA ISO - Setup and instructions
 
+This qualification process started at Meta with the intention to be shared broadly through the Fedora Ready program.
+
 Fedora hardware validation at Meta consists of a few automated and manual tests performed on the hardware by the Client Platform Engineering team (CPE). These tests are a combination of known open-source stress tests and benchmarks as well as certain manual tests performed to confirm certain components work as expected.
 
 In order for hardware validation testing to be simplified and performed on a Fedora Vanilla installation that, besides internal Meta management tooling, matches how devices are generally used, we created this ISO (fedora-fantasy-hwqual.iso).
