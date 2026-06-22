@@ -27,7 +27,7 @@ This kickstart roughly does the following:
 
 * If all goes well, preps post_kickstart to start next.
 
-Kickstart then goes to [fedora_stable_post_kickstart.sh](https://www.internalfb.com/code/fbsource/fbcode/cpe/linux/provisioning/post_kickstarts/fedora_stable_post_kickstart.sh).
+Kickstart then goes to `fedora_stable_post_kickstart.sh`.
 
 ### `post_kickstart.sh`
 This is a script that is executed in the %post section of the anaconda kickstart flow which allows us to run certain steps additionally to a typical kickstart install.
@@ -49,7 +49,7 @@ The second mode will install the official Nvidia driver from Nvidia’s cuda rep
 
 Once all the above finish executing, the device will automatically restart and the Welcome to Fedora OOBE screen will appear:
 
-![](/intern/wiki/_download/?title=A601a769-bee0-454f-be4c-4cdc3d6e8861&id=2744252&old=0&handle=GK52Iyez3oo5xpkGAFC7wLzBABZ3bj8QAAAP)
+![welcome-to-fedora-setup-screen.png](./screenshots/welcome-to-fedora-setup-screen.png)
 
 
 ### `fedora_hwqual_testing.sh`
@@ -105,7 +105,7 @@ TODO: Note here that before running any of these tests, the script will attempt 
 ## Final report
 Once all tests are performed an HTML file report will be generated which will create a summary of the device specifications and the tests performed. The Device specification will be gathered with the tool inxi. The final report will look like this:
 
-![](/intern/wiki/_download/?title=F9ccfb43-9061-47c1-aa58-bf112bb34a3d&id=2744253&old=0&handle=GFfyVifq1GRAXjAHAFoUFIM2GShDbj8QAAAP)
+![html-report-example](./screenshots/html-report-example.png)
 
 
 The complete log of all tests performed will be included in the HTML report but is also written here: `/root/hardware_validation.log`
