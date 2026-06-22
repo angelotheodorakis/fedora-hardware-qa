@@ -1,6 +1,4 @@
-# (c) Meta Platforms, Inc. and affiliates. Confidential and proprietary.
-
-# TODO add variable for version number
+#!/bin/bash
 
 # Ensure you download a copy of the following files and place them in the same folder as this build script
 # Files are found here: https://www.internalfb.com/code/fbsource/fbcode/cpe/linux/provisioning/
