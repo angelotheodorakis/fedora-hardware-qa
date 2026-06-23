@@ -1,21 +1,27 @@
-# Fedora Hardware validation QA ISO - Setup and instructions
+# Fedora Hardware validation QA framework
 
 This qualification process started at Meta with the intention to be shared broadly through the Fedora Ready program.
 
-Fedora hardware validation at Meta consists of a few automated and manual tests performed on the hardware by the Client Platform Engineering team (CPE). These tests are a combination of known open-source stress tests and benchmarks as well as certain manual tests performed to confirm certain components work as expected.
+The main premise of the Fedora hardware validation workflow shared here is to provide some guidance and tools for automated testing in order to assess a device usability, user experience and level of support for the Fedora operating system. The tests conducted are split into 2 categories:
 
-In order for hardware validation testing to be simplified and performed on a Fedora Vanilla installation that, besides internal Meta management tooling, matches how devices are generally used, we created this ISO (fedora-fantasy-hwqual.iso).
+1. Automated testing - This repository contains a bootable installer ISO based on the Fedora Everything netinstaller, a kickstart for automated provisioning, and some additional scripts for testing. These tests are a combination of known open-source stress tests and benchmarks.
+
+2. Manual testing - This guide also provides documentation on some standard QA practices and tests that can be conducted manually, as well as documentation templates for completing a report which will mark a device as officially Fedora supported.
+
+----
 
 # Automated testing with custom ISO
 
 ## ISO structure
-The ISO is generated through automation and built on top of the Fedora Everything netinstaller ISO as found on public Fedora repositories here: https://fedoraproject.org/misc/#everything 
+The ISO is built on top of the Fedora Everything netinstaller ISO as found on public Fedora repositories here: https://fedoraproject.org/misc/#everything 
 
-We include in the ISO the following 4 files which can also be found on the root path of the ISO when mounted.
+We include in the ISO the following 4 files which can also be found on the root path of the ISO when mounted as well as this repository.
 
 ![custom-iso-file-structure](./screenshots/custom-iso-file-structure.png)
 
-### `fedora_hwqual_kickstart.cfg`
+### Phase 1 - Anaconda instalation
+
+#### `fedora_hwqual_kickstart.cfg`
 Kickstart is an answer file which can be provided to a netinstaller and automate the steps otherwise performed by user selections (for example, system language, desktop environment etc)
 
 This kickstart roughly does the following:
@@ -31,7 +37,7 @@ This kickstart roughly does the following:
 
 Kickstart then goes to `fedora_stable_post_kickstart.sh`.
 
-### `post_kickstart.sh`
+#### `post_kickstart.sh`
 This is a script that is executed in the %post section of the anaconda kickstart flow which allows us to run certain steps additionally to a typical kickstart install.
 
 Post kickstart does the following:
@@ -42,20 +48,24 @@ Post kickstart does the following:
 * Creates a randomly generated file used as a secondary LUKS decryption key so on reboot, the password prompt can be skipped
 * Executes the next script bundled in the ISO to install Nvidia drivers if needed
 
-### `nvidia_setup.sh`
+#### `nvidia_setup.sh`
 This script will handle Nvidia driver installation if Nvidia hardware is detected on the system. It can run under two different modes, rpmfusion and nvidia. 
 
-The first mode will install Nvidia drivers by enabling 3rd party rpmfusion repositories and use the driver provided by that repo and the open source kernel modules handled by akmod. This option is also the default during automated installer since it’s the preferred driver Meta and CPE use and test with,
+The first mode will install Nvidia drivers by enabling 3rd party rpmfusion repositories and use the driver provided by that repo and the open source kernel modules handled by akmod. This option is also the default during automated installer.
 
-The second mode will install the official Nvidia driver from Nvidia’s cuda repository, using dkms to manager the provided kernel module. This is an option we provide to our Linux users if they require cuda libraries for development and they can uninstall the rpmfusion drivers and re-execute this script manually to switch to the official drivers instead of the rpmfusion ones.
+The second mode will install the official Nvidia driver from Nvidia’s cuda repository, using dkms to manage the provided kernel module. This is an option we provide to our Linux users if they require cuda libraries for development and they can uninstall the rpmfusion drivers and re-execute this script manually to switch to the official drivers instead of the rpmfusion ones.
 
-Once all the above finish executing, the device will automatically restart and the Welcome to Fedora OOBE screen will appear:
+After that the Anaconda part of the installation will be complete and the device will restart. The output of all the above scripts will be written in the log file at `/root/ks-post.log`.
+
+### Phase 2 - Welcome to Fedora OOBE manual setup
+
+The device will automatically restart after the Anaconda environment has finished installing the OS and the Welcome to Fedora OOBE screen will appear:
 
 ![welcome-to-fedora-setup-screen.png](./screenshots/welcome-to-fedora-setup-screen.png)
 
 
-### `fedora_hwqual_testing.sh`
-This script is also added to the ISO but not executed automatically. It will be moved by the kickstart phase to /usr/local/bin/ so it can be called from the terminal
+#### `fedora_hwqual_testing.sh`
+This script is also added to the ISO but not executed automatically. It will be moved by the kickstart phase to `/usr/local/bin/` so it can be called from the terminal.
 
 
 ## Benchmark script design
@@ -65,7 +75,7 @@ The script is a collection of benchmark and stress tests separated into 5 main c
 CPU, GPU, RAM, Drive, OS
 
 
-Under each category, a collection of  tests will be performed as follows:
+Under each category, a collection of tests will be performed as follows:
 
 
 ### CPU
@@ -83,7 +93,7 @@ Under each category, a collection of  tests will be performed as follows:
 3. Unigine Superposition through phoronix-test-suite
 4. `blender` off-screen rendering through phoronix-test-suite (also includes cpu testing)
 
-TODO: Note here that before running any of these tests, the script will attempt to detect if the system uses Dual / Hybrid GPUs and Nvidia like certain laptops have and if so, attempt to run the tests against the discrete GPU rather than the primary running the gnome session.
+Note here that before running any of these tests, the script will attempt to detect if the system uses Dual / Hybrid GPUs and Nvidia like certain laptops have and if so, attempt to run the tests against the discrete GPU rather than the primary running the gnome session.
 
 
 ### RAM
@@ -112,13 +122,14 @@ Once all tests are performed an HTML file report will be generated which will cr
 
 The complete log of all tests performed will be included in the HTML report but is also written here: `/root/hardware_validation.log`
 
+----
 
 # Manual testing
 
 
-Additional testing performed besides the automated tests with the ISO above are documented below. These tests are usually performed by a CPE engineer on an provisioned device as internally managed which will include our continuous management and security tooling.
+Additional testing performed besides the automated tests with the ISO above are documented below. These tests are usually performed by a QA engineer on an provisioned device, either provisioned ith the ISO in this repository or the Vanilla ISO officially provided by the Fedora Project. 
 
-## **Tools needed**
+## **Recommended Tools**
 * GPU Tests
    * [glmark2](https://github.com/glmark2/glmark2)
    * [Blender](https://opendata.blender.org/)
@@ -181,12 +192,14 @@ Hardware tests:
    * SSD benchmark matches hardware expectations
       * Ensure CoW is disabled
 
+
 * battery: GNOME power statistics
    * For expected power consumption do the following:
       * Set power mode to Power Saver
       * Screen brightness to 50%
       * Caffeine to keep device awake
       * Run CPU stress test above to keep CPU usage at 15-20% (2-4 workers should suffice)
+
 
 * External ports - USB ports - charging
 * Webcam: Camera app should be enough
@@ -204,7 +217,7 @@ Hardware tests:
 
 Software tests:
 
-* Vanilla OS installation
+* Vanilla OS installation (Workstation and/or Fedora KDE)
    * Any issues from the out of the box experience
    * Driver support
    * DNF update - LVFS firmware support (fwupdmgr update)
@@ -218,22 +231,25 @@ Software tests:
    * Turn WiFi/Bluetooth on/off
 
 
-Internal tools:
-
-* provisioning
-* continuous device management
-* certificate handling
-* yum repo / package distribution
-
-Final go/no-go test:
+(Optional) Final go/no-go test:
 
 * Spend a week using the device as the daily driver
 
+This test is usually a time sensitive one and relies on the tester's discretion. It is recommended to perform since there is no better way to get a feel of a device User Experience by using it as your daily driver for at least a week. 
+
 
 ## **Results**
-We publish the results in our internal Wiki for reference by all our employees. Results are captured in a spreadsheet with a specific template.
 
-Additionally, we create and link the following 2 reports to the wiki so we have the exact specs of the devices qualified:
+Results are captured in a spreadsheet using a provided template. (Currently in Gdocs which needs to be moved in a doc shared here)
+
+Additionally, we create and link the following 2 reports to the template so we have the exact specs of the devices qualified:
 
 * output of sudo inxi -e
 * output of sudo -E hw-probe -all -upload like here: https://linux-hardware.org/?probe=a98b6568d5
+
+
+#TODO
+
+- TPM2.0 test should be included in manual testing. Enabling secure boot from the BIOS and manually enrolling akmods keys is a good test for the TPM. Unlocking LUKS encryption too besides signing kernel modules.
+- Results publishing page with tester's report.
+- Report template
