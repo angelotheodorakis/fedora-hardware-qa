@@ -189,7 +189,6 @@ fi
 
 if $has_nvidia || $is_virtual; then
 
-  secure_boot_warning
   enable_nvidia_driver_repo
   pkg_kmod_installs
 
