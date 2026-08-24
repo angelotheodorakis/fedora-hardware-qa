@@ -2,6 +2,31 @@
 
 set -eux -o pipefail
 
+trap '
+  exec < /dev/tty3 > /dev/tty3
+  chvt 3
+  set +x
+  setfont -d
+  echo
+  echo "################################################################"
+  echo "#  ____   ___    _   _  ___ _____   ____  _   _ ___ ____    _  #"
+  echo "# |  _ \ / _ \  | \ | |/ _ \_   _| / ___|| | | |_ _|  _ \  | | #"
+  echo "# | | | | | | | |  \| | | | || |   \___ \| |_| || || |_) | | | #"
+  echo "# | |_| | |_| | | |\  | |_| || |    ___) |  _  || ||  __/  |_| #"
+  echo "# |____/ \___/  |_| \_|\___/ |_|   |____/|_| |_|___|_|     (_) #"
+  echo "#                                                              #"
+  echo "################################################################"
+  echo
+  echo
+  echo "Something went wrong and the post kickstart script did not finish successfully."
+  echo
+  echo "To see the output of what possibly failed, Press ALT+CTRL+F1 to switch to the commandline TTY script output. "
+  echo " You can return to the main window with ALT + CTRL + F6 to exit the installation."
+  echo
+  echo "The error was trapped in the line $LINENO in command: $BASH_COMMAND that finished with exit code $?"
+  sleep 120
+' ERR
+
 # scripts from ISO
 cp /tmp/fedora_hwqual_testing.sh /usr/local/bin/fedora_hwqual_testing.sh
 cp /tmp/nvidia_setup.sh /usr/local/bin/nvidia_setup.sh
@@ -27,7 +52,7 @@ grub2-mkconfig -o /boot/grub2/grub.conf
 dnf -y install dmidecode krb5-workstation krb5-libs openconnect chkconfig fedora-workstation-repositories libxcrypt-compat
 
 # Install appindicator extensions early so chef doesn't fail to bootstrap later
-dnf -y install gnome-shell-extension-appindicator gnome-extensions-app
+dnf -y install gnome-shell-extension-appindicator gnome-extensions-app gnome-shell-extension-caffeine
 
 # Installing Seahorse for keyring management
 dnf -y install seahorse
@@ -73,3 +98,43 @@ dnf -y upgrade --refresh
 chmod +x /usr/local/bin/nvidia_setup.sh
 /usr/local/bin/nvidia_setup.sh
 
+# Importing akmods key with MOK enrollment if secure boot is enabled
+MOKUTIL_CHECK=$(mokutil --sb-state)
+if [[ $MOKUTIL_CHECK == "SecureBoot enabled" ]]; then
+  #TODO we might need to change TTY here to 1 which displays the post_kistart steps
+  AKMODS_CERT="/etc/pki/akmods/certs/public_key.der"
+  # Check for akmods
+  if [ ! -d "/etc/pki/akmods/certs" ] && [ ! -f "$AKMODS_CERT" ]; then
+  dnf install -y kmodtool akmods mokutil openssl
+  fi
+
+  /usr/sbin/kmodgenca -a
+
+  set +x
+  # Interactive mokutil enrollment via TTY3
+  if [ -f /etc/pki/akmods/certs/public_key.der ]; then
+  exec < /dev/tty3 > /dev/tty3 2>&1
+  chvt 3
+  setfont -d
+  echo
+  echo "########################################################"
+  echo "#  Secure Boot: MOK Key Enrollment                     #"
+  echo "#  You will be prompted to set a one-time password.    #"
+  echo "#  Remember it — you'll need it on the next reboot.    #"
+  echo "########################################################"
+  echo
+  mokutil --import /etc/pki/akmods/certs/public_key.der
+  mokutil --timeout -1
+  echo
+  echo "MOK key queued for enrollment. On next boot, the MOK"
+  echo "manager will ask you to confirm with the password above."
+  echo
+  read -rsn1 -p "Press any key to continue..."
+  chvt 6
+  set -x
+  exec < /dev/tty1 > /dev/tty1 2>&1
+  fi
+
+  akmods --rebuild
+  dracut -f
+fi

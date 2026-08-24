@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Ensure you download a copy of the following files and place them in the same folder as this build script
-# Files are found here: https://www.internalfb.com/code/fbsource/fbcode/cpe/linux/provisioning/
-# 1. ../nvidia_setup.sh
-# 2. ../post_kickstart.sh
-# 3. ../fedora_hwqual_kickstart.cfg
+# Ensure you have a copy of the following files in the same folder as this build script
+# 1. nvidia_setup.sh
+# 2. post_kickstart.sh
+# 3. fedora_hwqual_kickstart.cfg
+# 4. Hardware_Qualification_ISO*.pdf
 # And of course a copy of the Fedora Everything ISO which can be downloaded publicly
-# 4. Fedora-Everything-netinst-x86_64-40-1.14.iso
+# 5. Fedora-Everything-netinst-x86_64-40-1.14.iso
 
 # Define version and hwqual variables from command line arguments
 VERSION=$1
@@ -23,7 +23,7 @@ cp ../nvidia_setup.sh .
 cp ../post_kickstart.sh .
 cp ../Hardware_Qualification_ISO*.pdf .
 cp ../fedora_hwqual_kickstart.cfg .
-cp ../../ISOs/Fedora-Everything-netinst-x86_64-"$VERSION"*.iso .
+cp ../Fedora-Everything-netinst-x86_64-"$VERSION"*.iso .
 
 # Run the mkksiso command to build the ISO, including all specified scripts and files
 sudo mkksiso -c "platform.version=$VERSION platform.nvidia=rpmfusion" -V FUDGE"$VERSION"hwqual \
@@ -34,3 +34,6 @@ sudo mkksiso -c "platform.version=$VERSION platform.nvidia=rpmfusion" -V FUDGE"$
 fedora_hwqual_kickstart.cfg \
 Fedora-Everything-netinst-x86_64-"$VERSION"*.iso \
 ../fedora-fantasy-hwqual-"$VERSION".iso
+
+cd ..
+sudo rm -rf build_iso
