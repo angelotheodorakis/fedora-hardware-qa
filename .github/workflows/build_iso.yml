@@ -36,7 +36,7 @@ jobs:
       - name: Calculate Next Version Tag
         id: tag_version
         run: |
-          git config --global --add safe.directory "${{ github.workspace }}"
+          git config --global --add safe.directory '*'
           
           git fetch --tags --force
           
