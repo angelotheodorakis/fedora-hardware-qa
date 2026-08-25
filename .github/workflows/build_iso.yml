@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          dnf install -y lorax
+          dnf install -y lorax wget
 
       - name: Run ISO build script
         env:
