@@ -28,10 +28,10 @@ wget "$BASE_ISO_URL"
 sudo mkksiso \
 -c "platform.version=$OS_VERSION_NUMBER platform.nvidia=rpmfusion" \
 -V FUDGE"$OS_VERSION_NUMBER"hwqual \
--a fedora_hwqual_testing.sh \
--a post_kickstart.sh \
--a nvidia_setup.sh \
--a Hardware_Qualification_ISO*.pdf \
+-a ./scripts/fedora_hwqual_testing.sh \
+-a ./scripts/post_kickstart.sh \
+-a ./scripts/nvidia_setup.sh \
+-a ./scripts/Hardware_Qualification_ISO*.pdf \
 fedora_hwqual_kickstart.cfg \
 "$ISO_NAME" \
 fedora-fantasy-hwqual-"$OS_VERSION_NUMBER".iso
