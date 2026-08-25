@@ -16,14 +16,14 @@ jobs:
       options: --privileged
 
     steps:
+      - name: Install build tools & git
+        run: |
+          dnf install -y git lorax wget
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetches all tags needed for versioning
-
-      - name: Install dependencies
-        run: |
-          dnf install -y lorax wget git
+          fetch-depth: 0
 
       - name: Run ISO build script
         env:
@@ -36,24 +36,19 @@ jobs:
       - name: Calculate Next Version Tag
         id: tag_version
         run: |
-          # Safe directory check for Git inside container
           git config --global --add safe.directory "${{ github.workspace }}"
           
-          # Fetch existing tags
-          git fetch --tags
+          git fetch --tags --force
           
-          # Get latest tag matching v* (defaults to v1.1 if none found)
           LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
           if [ -z "$LATEST_TAG" ]; then
             LATEST_TAG="v1.1"
           fi
           
-          # Strip 'v' and extract major/minor numbers
           VERSION_NO_V="${LATEST_TAG#v}"
           MAJOR=$(echo "$VERSION_NO_V" | cut -d. -f1)
           MINOR=$(echo "$VERSION_NO_V" | cut -d. -f2)
           
-          # Increment minor version
           NEXT_MINOR=$((MINOR + 1))
           NEXT_TAG="v${MAJOR}.${NEXT_MINOR}"
           
