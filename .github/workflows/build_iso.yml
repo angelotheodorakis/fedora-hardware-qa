@@ -23,14 +23,16 @@ jobs:
           dnf install -y lorax
 
       - name: Run ISO build script
+        env:
+          OS_VERSION_NUMBER: 44
         run: |
           chmod +x ./scripts/build_iso.sh
-          ./scripts/build_iso.sh
+          ./scripts/build_iso.sh $OS_VERSION_NUMBER
 
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fedora-custom-iso
+          name: fedora-fantasy-hwqual.iso
           path: |
             *.iso
             **/*.iso
