@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -uxf -o pipefail
+set -ux -o pipefail
 
 OS_VERSION_NUMBER="$1"
 BUILD_DIR="$2"
@@ -32,7 +32,7 @@ sudo mkksiso \
 -a ./scripts/post_kickstart.sh \
 -a ./scripts/nvidia_setup.sh \
 -a ./scripts/Hardware_Qualification_ISO*.pdf \
-fedora_hwqual_kickstart.cfg \
+./scripts/fedora_hwqual_kickstart.cfg \
 "$ISO_NAME" \
 fedora-fantasy-hwqual-"$OS_VERSION_NUMBER".iso
 
