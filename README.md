@@ -27,15 +27,23 @@ Also note that if you have secure boot enabled, automatic MOK key enrollment for
 1. Boot the `fedora-fantasy-hwqual.iso` from your USB drive
 2. The installer will automatically proceed if a network connection is detected. If not, connect to your network manually when prompted.
 3. Allow the installation to proceed. The post_kickstart script will execute during the "Running post-installation scripts" step (progress can be monitored under TTY1 - Press CTRL + ALT + F1)
+
+![post-install-scripts-installer.png](./screenshots/post-install-scripts-installer.png)
+
 4. If secure boot is enabled you will be prompted to create a temporary password for the akmods MOK key. Once you set a password, press any key to resume the installation.
+
+![mok-key-password-creation.png](./screenshots/mok-key-password-creation.png)
 
 NOTE: The password here is completely temporary and will only be used during MOK Key enrollment. Something simple like "1234" is perfectly acceptable.
 
-1. If everything went well, the device will automatically reboot. On the next reboot, MOK Key enrollment will be automatically initiated.
-2. Proceed to enroll the akmods key to the BIOS following the prompts on the screen and by using the temp password you configured at the previous step.
-3. Once you complete the MOK key enrollment, reboot the device.
-4. Complete the Welcome to Fedora guide to create a user account etc.
-5. The device is now ready to use for further testing.
+5. If everything went well, the device will automatically reboot. On the next reboot, MOK Key enrollment will be automatically initiated.
+
+![mok-key-bios-enrollment.png](./screenshots/mok-key-bios-enrollment.png)
+
+6. Proceed to enroll the akmods key to the BIOS following the prompts on the screen and by using the temp password you configured at the previous step.
+7. Once you complete the MOK key enrollment, reboot the device.
+8. Complete the Welcome to Fedora guide to create a user account etc.
+9. The device is now ready to use for further testing.
 
 </details>
 
