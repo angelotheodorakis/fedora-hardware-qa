@@ -3,12 +3,14 @@
 set -uxf -o pipefail
 
 OS_VERSION_NUMBER="$1"
+BUILD_DIR="$2"
 
-if [[ $# -ne 1 ]]; then
-  echo 1>&2 "$0: Please specify the fedora version number"
+if [[ $# -ne 2 ]]; then
+  echo 1>&2 "$0: Please specify the fedora version number and build directory"
   exit 2
 fi
 
+cd "$BUILD_DIR"
 # Download Fedora Everything ISO
 PUBLIC_URL="https://dl.fedoraproject.org/pub/fedora/linux/releases/"
 STABLE_PATH="${OS_VERSION_NUMBER}/Everything/x86_64/iso/"

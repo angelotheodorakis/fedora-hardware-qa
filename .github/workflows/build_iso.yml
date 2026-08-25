@@ -23,12 +23,12 @@ jobs:
           dnf install -y lorax wget
 
       - name: Run ISO build script
-        working-directory: ${{ github.workspace }}
         env:
           OS_VERSION_NUMBER: 44
+          BUILD_DIR: ${{ github.workspace }}
         run: |
           chmod +x ./scripts/build_iso.sh
-          ./scripts/build_iso.sh $OS_VERSION_NUMBER
+          ./scripts/build_iso.sh $OS_VERSION_NUMBER "$BUILD_DIR"
 
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
