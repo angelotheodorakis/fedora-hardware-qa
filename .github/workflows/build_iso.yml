@@ -3,9 +3,10 @@ name: Build Fedora ISO
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-iso:
@@ -17,10 +18,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetches all tags needed for versioning
 
       - name: Install dependencies
         run: |
-          dnf install -y lorax wget
+          dnf install -y lorax wget git
 
       - name: Run ISO build script
         env:
@@ -30,6 +33,33 @@ jobs:
           chmod +x ./scripts/build_iso.sh
           ./scripts/build_iso.sh $OS_VERSION_NUMBER "$BUILD_DIR"
 
+      - name: Calculate Next Version Tag
+        id: tag_version
+        run: |
+          # Safe directory check for Git inside container
+          git config --global --add safe.directory "${{ github.workspace }}"
+          
+          # Fetch existing tags
+          git fetch --tags
+          
+          # Get latest tag matching v* (defaults to v1.1 if none found)
+          LATEST_TAG=$(git tag -l "v*" --sort=-v:refname | head -n 1)
+          if [ -z "$LATEST_TAG" ]; then
+            LATEST_TAG="v1.1"
+          fi
+          
+          # Strip 'v' and extract major/minor numbers
+          VERSION_NO_V="${LATEST_TAG#v}"
+          MAJOR=$(echo "$VERSION_NO_V" | cut -d. -f1)
+          MINOR=$(echo "$VERSION_NO_V" | cut -d. -f2)
+          
+          # Increment minor version
+          NEXT_MINOR=$((MINOR + 1))
+          NEXT_TAG="v${MAJOR}.${NEXT_MINOR}"
+          
+          echo "NEW_TAG=$NEXT_TAG" >> $GITHUB_OUTPUT
+          echo "Target Release Tag: $NEXT_TAG"
+
       - name: Upload ISO Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -38,3 +68,15 @@ jobs:
             *.iso
             **/*.iso
           if-no-files-found: error
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag_version.outputs.NEW_TAG }}
+          name: Release ${{ steps.tag_version.outputs.NEW_TAG }}
+          files: |
+            *.iso
+            **/*.iso
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
