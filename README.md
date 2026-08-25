@@ -12,7 +12,41 @@ The main premise of the Fedora hardware validation workflow shared here is to pr
 
 # Automated testing with custom ISO
 
+<details>
+
+<summary>
+
+## ISO Instalation Step by step
+
+</summary>
+
+It is recommended to use a bootable USB drive with [Ventoy](https://www.ventoy.net/en/index.html).
+
+Also note that if you have secure boot enabled, automatic MOK key enrollment for the akmods key will be attempted. This is to ensure that self-signed kernel modules are loaded on boot, like for example on devices with NVidia GPUs.
+
+1. Boot the `fedora-fantasy-hwqual.iso` from your USB drive
+2. The installer will automatically proceed if a network connection is detected. If not, connect to your network manually when prompted.
+3. Allow the installation to proceed. The post_kickstart script will execute during the "Running post-installation scripts" step (progress can be monitored under TTY1 - Press CTRL + ALT + F1)
+4. If secure boot is enabled you will be prompted to create a temporary password for the akmods MOK key. Once you set a password, press any key to resume the installation.
+
+NOTE: The password here is completely temporary and will only be used during MOK Key enrollment. Something simple like "1234" is perfectly acceptable.
+
+1. If everything went well, the device will automatically reboot. On the next reboot, MOK Key enrollment will be automatically initiated.
+2. Proceed to enroll the akmods key to the BIOS following the prompts on the screen and by using the temp password you configured at the previous step.
+3. Once you complete the MOK key enrollment, reboot the device.
+4. Complete the Welcome to Fedora guide to create a user account etc.
+5. The device is now ready to use for further testing.
+
+</details>
+
+----
+<details>
+
+<summary>
+
 ## ISO structure
+
+</summary>
 
 The ISO is built on top of the Fedora Everything netinstaller ISO as found on public Fedora repositories here: <https://fedoraproject.org/misc/#everything>
 
@@ -124,13 +158,24 @@ Once all tests are performed an HTML file report will be generated which will cr
 
 The complete log of all tests performed will be included in the HTML report but is also written here: `/root/hardware_validation.log`
 
+</details>
+
 ----
+
+
 
 # Manual testing
 
 Additional testing performed besides the automated tests with the ISO above are documented below. These tests are usually performed by a QA engineer on an provisioned device, either provisioned ith the ISO in this repository or the Vanilla ISO officially provided by the Fedora Project.
 
+----
+<details>
+
+<summary>
+
 ## **Recommended Tools**
+
+</summary>
 
 * GPU Tests
   * [glmark2](https://github.com/glmark2/glmark2)
@@ -159,7 +204,15 @@ Additional testing performed besides the automated tests with the ISO above are 
 * Hardware probe (hw-probe):[https://fedoraproject.org/wiki/Hardware_probe](https://fedoraproject.org/wiki/Hardware_probe)
   * Example output:[https://linux-hardware.org/?probe=273526bab2](https://linux-hardware.org/?probe=273526bab2)
 
+</details>
+
+<details>
+
+<summary>
+
 ## **Tests to perform**
+
+</summary>
 
 Hardware tests:
 
@@ -234,16 +287,18 @@ Software tests:
 
 This test is usually a time sensitive one and relies on the tester's discretion. It is recommended to perform since there is no better way to get a feel of a device User Experience by using it as your daily driver for at least a week.
 
+</details>
+
 ## **Results**
 
-Results are captured in a spreadsheet using a provided template. (Currently in Gdocs which needs to be moved in a doc shared here)
+Results are captured in a spreadsheet using a provided template.
 
 Additionally, we create and link the following 2 reports to the template so we have the exact specs of the devices qualified:
 
 * output of sudo inxi -e
 * output of sudo -E hw-probe -all -upload like here: <https://linux-hardware.org/?probe=a98b6568d5>
 
-#TODO
+# TODO
 
 * TPM2.0 test should be included in manual testing. Enabling secure boot from the BIOS and manually enrolling akmods keys is a good test for the TPM. Unlocking LUKS encryption too besides signing kernel modules.
 * Results publishing page with tester's report.
