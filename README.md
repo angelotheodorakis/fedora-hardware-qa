@@ -113,7 +113,17 @@ The device will automatically restart after the Anaconda environment has finishe
 
 This script is also added to the ISO but not executed automatically. It will be moved by the kickstart phase to `/usr/local/bin/` so it can be called from the terminal.
 
-## Benchmark script design
+## Benchmark script design (`fedora_hwqual_testing.sh`)
+
+As mentioned above, the script is automatically added in `/usr/local/bin/` so it can be easily called from a terminal window with the command: `fedora_hwqual_testing.sh`
+
+The script will ask for sudo permissions due to certain actions requiring elevated priviledges (installing dependencies etc.)
+
+It will then start running in a `tmux` environment. The primary steps will be displayed below the welcome art while the actual tests will be running in a split window on the side.
+
+### Script UI:
+
+![testing-script-ui.png](./screenshots/testing-script-ui.png)
 
 The script is a collection of benchmark and stress tests separated into 5 main categories.
 
@@ -141,7 +151,7 @@ Note here that before running any of these tests, the script will attempt to det
 
 ### RAM
 
-1. `memtester` stress test against 80% of the free system RAM
+1. `memtester` stress test against 80% of the free system RAM (very time consuming on high spec systems)
 2. `sysbench` memory speed test
 3. `tinymembench` through the phoronix-test-suite
 4. `ramspeed` through the photonix-test-suite
@@ -254,12 +264,18 @@ Hardware tests:
   * SSD benchmark matches hardware expectations
     * Ensure CoW is disabled
 
-* battery: GNOME power statistics
+* battery (if testing a laptop device): GNOME power statistics
   * For expected power consumption do the following:
     * Set power mode to Power Saver
     * Screen brightness to 50%
     * Caffeine to keep device awake
     * Run CPU stress test above to keep CPU usage at 15-20% (2-4 workers should suffice)
+
+* TPM2.0 security chip
+  * Ensure secure boot and 3rd party microsoft certs are enabled in the BIOS
+  * Complete the installation with the hwqual ISO which secure boot is on
+    * The installer will run through configuring akmods and enroll a self-signed certificate with MOK key enrollment
+  * Enroll the drive LUKS encryption to the TPM. You can use one of the helper scripts from this repo: <https://github.com/angelotheodorakis/fedora-helper-scripts>
 
 * External ports - USB ports - charging
 * Webcam: Camera app should be enough
@@ -308,6 +324,5 @@ Additionally, we create and link the following 2 reports to the template so we h
 
 # TODO
 
-* TPM2.0 test should be included in manual testing. Enabling secure boot from the BIOS and manually enrolling akmods keys is a good test for the TPM. Unlocking LUKS encryption too besides signing kernel modules.
 * Results publishing page with tester's report.
 * Report template
