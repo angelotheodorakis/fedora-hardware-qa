@@ -96,7 +96,28 @@ dnf -y upgrade --refresh
 
 # installing Nvidia drivers if detected
 chmod +x /usr/local/bin/nvidia_setup.sh
-/usr/local/bin/nvidia_setup.sh
+if /usr/sbin/lspci -mnn | grep -E 'VGA|3D controller' | grep NVIDIA | grep -q 10de; then
+  set +x
+  exec < /dev/tty3 > /dev/tty3 2>&1
+  chvt 3
+  setfont -d
+  echo "Nvidia EULA Agreement"
+  echo "We have detected an Nvidia graphics card. This installer can automatically setup the Nvidia drivers now but first, "
+  echo "you need to accept the Nvidia Licence for Customer use of software. (EULA agreement)"
+  echo "For more information on the licence agreement visit the page here: https://www.nvidia.com/en-us/drivers/nvidia-license/"
+  echo "Do you accept the Nvidia Licence for Customer use of software? (EULA agreement)"
+  echo "Press 'y' for Yes or 'n' for No to continue"
+  read -rsn1 -p"Press 'y' for Yes or 'n' for No to continue" eula
+  if [[ $eula == "y" ]]; then
+    /usr/local/bin/nvidia_setup.sh
+  else
+    echo "Nvidia driver installation aborted. You can manually install the drivers with the provided 'nvidia_setup.sh' script"
+  fi
+  sleep 3
+  chvt 6
+  set -x
+  exec < /dev/tty1 > /dev/tty1 2>&1
+fi
 
 # Importing akmods key with MOK enrollment if secure boot is enabled
 MOKUTIL_CHECK=$(mokutil --sb-state)
