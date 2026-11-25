@@ -61,7 +61,27 @@ echo
 echo -e "${Green}This script will automatically run a long suite of tests. ${Color_Off}"
 echo -e "You will find more info in the PDF document in the user Documents folder."
 echo -e "Once the script completes it will generate a report in html format."
-echo -e "${Yellow}This script will take many hours to complete! ${Color_Off}. Please allow it time."
+echo
+echo -e "Would you like to run a suite of (1) Basic tests or (2) Extended? Choose 1 or 2 below."
+echo -e "${Yellow}Note that extended suite can take many hours to complete!${Color_Off} Please allow it time."
+
+printf "Enter choice [1/2] (default 1): "
+
+while IFS= read -r choice; do
+    # Default to GNOME if user just presses Enter
+    if [ -z "$choice" ] || [ "$choice" = "1" ]; then
+        echo -e "You have selected the ${Yellow}Basic${Color_Off} test suite. Proceeding..."
+        test_suite="basic"
+        break
+    elif [ "$choice" = "2" ]; then
+        echo -e "You have selected the ${Yellow}Extended${Color_Off} test suite. Proceeding..."
+        test_suite="extended"
+        break
+    else
+        echo "Invalid selection. Please enter '1' for GNOME or '2' for KDE/Plasma:"
+        printf "> "
+    fi
+done
 
 # Create log file
 FULL_LOG="/root/hardware_validation.log"
@@ -102,83 +122,103 @@ touch "$REPORTFILE"
 echo -e "Installing dependencies..."
 
 # Ensure dependencies are installed
-run_in_split "log_clean 'dnf -y install git glmark2 sysbench memtester iozone hdparm stress inxi wget unzip bc php-cli php-common php-gd php-pdo php-process php-xml' '$FULL_LOG'"
 
-PTS_CMD="log_clean 'git clone https://github.com/phoronix-test-suite/phoronix-test-suite /tmp/phoronix-test-suite' '$FULL_LOG'; pushd /tmp/phoronix-test-suite && log_clean './install-sh' '$FULL_LOG' && popd"
-run_in_split "$PTS_CMD"
+if [[ $test_suite == "basic" ]]; then
+    dnf_apps="git glmark2 sysbench memtester hdparm stress inxi wget unzip bc"
+else
+    dnf_apps="git glmark2 sysbench memtester iozone hdparm stress inxi wget unzip bc php-cli php-common php-gd php-pdo php-process php-xml"
+fi
 
-####################################################################
-# Configure phoronix-test-suite
-####################################################################
+run_in_split "log_clean 'dnf -y install $dnf_apps' '$FULL_LOG'"
 
-# Environment flags for downloads
-PTS_ENV="export NO_FILE_HASH_CHECKS=1;"
+if [[ $test_suite == "extended" ]]; then
 
-# Environment flags for test runs
-TEST_RUN_ENV="export FORCE_TIMES_TO_RUN=1; export PTS_CONCURRENT_TEST_RUNS=1; export TEST_TIMEOUT_AFTER=30;"
+    ####################################################################
+    # Installing phoronix-test-suite from github
+    ####################################################################
 
-run_in_split "$PTS_ENV log_clean \"printf 'y\\nn\\nn\\nn\\nn\\nn\\nn\\n' | phoronix-test-suite batch-setup\" '$FULL_LOG'"
-run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install cachebench coremark deepspeech epoch system/graphics-magick' '$FULL_LOG'"
-run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install furmark unigine-super blender' '$FULL_LOG'"
-run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install tinymembench ramspeed' '$FULL_LOG'"
-run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install fio dbench' '$FULL_LOG'"
-run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install glibc-bench osbench' '$FULL_LOG'"
+    PTS_CMD="log_clean 'git clone https://github.com/phoronix-test-suite/phoronix-test-suite /tmp/phoronix-test-suite' '$FULL_LOG'; pushd /tmp/phoronix-test-suite && log_clean './install-sh' '$FULL_LOG' && popd"
+    run_in_split "$PTS_CMD"
 
-FURMARK_DIR="/var/lib/phoronix-test-suite/installed-tests/pts/furmark-1.0.0"
-FURMARK_SETUP_CMD="
-    log_clean 'wget -q https://gpumagick.com/downloads/files/2024/furmark2/FurMark_2.1.0.2_linux64.zip -O /tmp/FurMark_2.1.0.2_linux64.zip' '$FULL_LOG'
-    mkdir -p '$FURMARK_DIR'
-    log_clean 'cp /tmp/FurMark_2.1.0.2_linux64.zip $FURMARK_DIR/' '$FULL_LOG'
-    log_clean 'unzip -o -d $FURMARK_DIR/ $FURMARK_DIR/FurMark_2.1.0.2_linux64.zip' '$FULL_LOG'
-"
-run_in_split "$FURMARK_SETUP_CMD"
+    ####################################################################
+    # Configure phoronix-test-suite
+    ####################################################################
+
+    # Environment flags for downloads
+    PTS_ENV="export NO_FILE_HASH_CHECKS=1;"
+
+    # Environment flags for test runs
+    TEST_RUN_ENV="export FORCE_TIMES_TO_RUN=1; export PTS_CONCURRENT_TEST_RUNS=1; export TEST_TIMEOUT_AFTER=30;"
+
+    run_in_split "$PTS_ENV log_clean \"printf 'y\\nn\\nn\\nn\\nn\\nn\\nn\\n' | phoronix-test-suite batch-setup\" '$FULL_LOG'"
+    run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install cachebench coremark deepspeech epoch system/graphics-magick' '$FULL_LOG'"
+    run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install furmark unigine-super blender' '$FULL_LOG'"
+    run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install tinymembench ramspeed' '$FULL_LOG'"
+    run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install fio dbench' '$FULL_LOG'"
+    run_in_split "$PTS_ENV log_clean 'phoronix-test-suite install glibc-bench osbench' '$FULL_LOG'"
+
+    FURMARK_DIR="/var/lib/phoronix-test-suite/installed-tests/pts/furmark-1.0.0"
+    FURMARK_SETUP_CMD="
+        log_clean 'wget -q https://gpumagick.com/downloads/files/2024/furmark2/FurMark_2.1.0.2_linux64.zip -O /tmp/FurMark_2.1.0.2_linux64.zip' '$FULL_LOG'
+        mkdir -p '$FURMARK_DIR'
+        log_clean 'cp /tmp/FurMark_2.1.0.2_linux64.zip $FURMARK_DIR/' '$FULL_LOG'
+        log_clean 'unzip -o -d $FURMARK_DIR/ $FURMARK_DIR/FurMark_2.1.0.2_linux64.zip' '$FULL_LOG'
+    "
+    run_in_split "$FURMARK_SETUP_CMD"
+
+fi
 
 ####################################################################
 # CPU Stress Test
 ####################################################################
 
-echo -e "Running CPU tests...."
+echo -e "Running CPU stress test..."
 
 NPROC=$(nproc | tr -d '\n')
 run_in_split "log_clean 'stress --cpu $NPROC --io 4 --vm 2 --vm-bytes 128M --timeout 300s' '$FULL_LOG'"
 CPU_STRESS=$(grep "successful run completed" "$FULL_LOG" | tail -1)
 
-run_in_split "$TEST_RUN_ENV log_clean \"echo 4 | phoronix-test-suite batch-run cachebench\" '$FULL_LOG'"
-CPU_CACHEBENCH=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+if [[ $test_suite == "extended" ]]; then
 
-run_in_split "$TEST_RUN_ENV log_clean 'phoronix-test-suite batch-run coremark' '$FULL_LOG'"
-CPU_COREMARK=$(awk '/Average: [0-9.]+ Iterations\/Sec/ {print $0}' "$FULL_LOG" | tail -1)
+    echo -e "Running CPU extended benchmarks..."
+    run_in_split "$TEST_RUN_ENV log_clean \"echo 4 | phoronix-test-suite batch-run cachebench\" '$FULL_LOG'"
+    CPU_CACHEBENCH=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
 
-run_in_split "$TEST_RUN_ENV log_clean \"echo 8 | phoronix-test-suite batch-run system/graphics-magick\" '$FULL_LOG'"
-CPU_GRAPHICS_MAGICK=$(awk '/Average: [0-9.]+ Iterations Per Minute/ {print $0}' "$FULL_LOG" | tail -1)
+    run_in_split "$TEST_RUN_ENV log_clean 'phoronix-test-suite batch-run coremark' '$FULL_LOG'"
+    CPU_COREMARK=$(awk '/Average: [0-9.]+ Iterations\/Sec/ {print $0}' "$FULL_LOG" | tail -1)
 
-run_in_split "$TEST_RUN_ENV log_clean 'phoronix-test-suite batch-run epoch' '$FULL_LOG'"
-CPU_EPOCH=$(awk '
-/Epoch3D Deck: Cone:/ {
-    print $0
-    getline; print $0
-    while (getline) {
-        if ($0 ~ /Average: [0-9.]+ Seconds/) {
-            print $0
-            break
+    run_in_split "$TEST_RUN_ENV log_clean \"echo 8 | phoronix-test-suite batch-run system/graphics-magick\" '$FULL_LOG'"
+    CPU_GRAPHICS_MAGICK=$(awk '/Average: [0-9.]+ Iterations Per Minute/ {print $0}' "$FULL_LOG" | tail -1)
+
+    run_in_split "$TEST_RUN_ENV log_clean 'phoronix-test-suite batch-run epoch' '$FULL_LOG'"
+    CPU_EPOCH=$(awk '
+    /Epoch3D Deck: Cone:/ {
+        print $0
+        getline; print $0
+        while (getline) {
+            if ($0 ~ /Average: [0-9.]+ Seconds/) {
+                print $0
+                break
+            }
         }
     }
-}
-' "$FULL_LOG")
+    ' "$FULL_LOG")
 
-run_in_split "$TEST_RUN_ENV log_clean 'phoronix-test-suite batch-run deepspeech' '$FULL_LOG'"
-CPU_DEEPSPEECH=$(awk '
-/Acceleration: CPU:/ {
-    print $0
-    getline; print $0
-    while (getline) {
-        if ($0 ~ /Average: [0-9.]+ Seconds/) {
-            print $0
-            break
+    run_in_split "$TEST_RUN_ENV log_clean 'phoronix-test-suite batch-run deepspeech' '$FULL_LOG'"
+    CPU_DEEPSPEECH=$(awk '
+    /Acceleration: CPU:/ {
+        print $0
+        getline; print $0
+        while (getline) {
+            if ($0 ~ /Average: [0-9.]+ Seconds/) {
+                print $0
+                break
+            }
         }
     }
-}
-' "$FULL_LOG")
+    ' "$FULL_LOG")
+
+fi
 
 ####################################################################
 # GPU Stress Test
@@ -203,17 +243,22 @@ if $has_nvidia && $has_dual_gpus; then
   GPU_ENV="export __NV_PRIME_RENDER_OFFLOAD=1; export __GLX_VENDOR_LIBRARY_NAME=nvidia; export __VK_LAYER_NV_optimus=NVIDIA_only; export __NV_PRIME_RENDER_OFFLOAD_PROVIDER=NVIDIA-G1;"
 fi
 
-run_in_split "$TEST_RUN_ENV $GPU_ENV log_clean \"printf '5\\n5\\n1\\n' | phoronix-test-suite batch-run furmark\" '$FULL_LOG'"
-GPU_FURMARK=$(awk '/Average: [0-9.]+ FPS/ {print $0}' "$FULL_LOG" | tail -1)
-
 run_in_split "$GPU_ENV log_clean \"machinectl shell \\\"$SUDO_USER\\\"@.host /usr/bin/glmark2-wayland --fullscreen\" '$FULL_LOG'"
 GPU_GLMARK2=$(grep "glmark2 Score:" "$FULL_LOG" | tail -1)
 
-run_in_split "$TEST_RUN_ENV $GPU_ENV log_clean \"printf '5\\n1\\n4\\n' | phoronix-test-suite batch-run unigine-super\" '$FULL_LOG'"
-GPU_UNIGINE=$(awk '/Average: [0-9.]+ Frames Per Second/ {print $0}' "$FULL_LOG" | tail -1)
+if [[ $test_suite == "extended" ]]; then
 
-run_in_split "$TEST_RUN_ENV $GPU_ENV log_clean \"printf '7\\n3\\n' | phoronix-test-suite batch-run blender\" '$FULL_LOG'"
-GPU_BLENDER=$(awk '/Blend File: .* - Compute: .*:/ {print $0; getline; print $0}' "$FULL_LOG")
+    echo -e "Running GPU extended benchmarks..."
+    run_in_split "$TEST_RUN_ENV $GPU_ENV log_clean \"printf '5\\n5\\n1\\n' | phoronix-test-suite batch-run furmark\" '$FULL_LOG'"
+    GPU_FURMARK=$(awk '/Average: [0-9.]+ FPS/ {print $0}' "$FULL_LOG" | tail -1)
+
+    run_in_split "$TEST_RUN_ENV $GPU_ENV log_clean \"printf '5\\n1\\n4\\n' | phoronix-test-suite batch-run unigine-super\" '$FULL_LOG'"
+    GPU_UNIGINE=$(awk '/Average: [0-9.]+ Frames Per Second/ {print $0}' "$FULL_LOG" | tail -1)
+
+    run_in_split "$TEST_RUN_ENV $GPU_ENV log_clean \"printf '7\\n3\\n' | phoronix-test-suite batch-run blender\" '$FULL_LOG'"
+    GPU_BLENDER=$(awk '/Blend File: .* - Compute: .*:/ {print $0; getline; print $0}' "$FULL_LOG")
+
+fi
 
 ####################################################################
 # Memory Stress Test
@@ -221,29 +266,34 @@ GPU_BLENDER=$(awk '/Blend File: .* - Compute: .*:/ {print $0; getline; print $0}
 
 echo -e "Running RAM tests...."
 
-RAM_FREE="$(free -g | grep -w 'Mem' | awk '{print $4}')"
-RAM_FREE_80=$(bc <<< "$RAM_FREE * 0.8")
-RAM_FREE_80=$(printf "%.0f" "$RAM_FREE_80")
-
-run_in_split "log_clean 'memtester \"$RAM_FREE_80\"G 1' '$FULL_LOG'"
-RAM_MEMTESTER=$(grep "Done." "$FULL_LOG" | tail -1)
-
 run_in_split "log_clean 'sysbench memory run' '$FULL_LOG'"
 RAM_SYSBENCH_OPS=$(awk '/Total operations:/ {print $0}' "$FULL_LOG" | tail -1)
 RAM_SYSBENCH_MB=$(awk '/MiB transferred/ {print $0}' "$FULL_LOG" | tail -1)
 
-run_in_split "$TEST_RUN_ENV log_clean 'phoronix-test-suite batch-run tinymembench' '$FULL_LOG'"
-RAM_TINYMEMBENCH_MEMCPY_AVG=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
-RAM_TINYMEMBENCH_MEMSET_AVG=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+if [[ $test_suite == "extended" ]]; then
 
-run_in_split "$TEST_RUN_ENV log_clean \"printf '6\\n3\\n' | phoronix-test-suite batch-run ramspeed\" '$FULL_LOG'"
-RAM_RAMSPEED=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+    echo -e "Running RAM extended benchmarks..."
+    RAM_FREE="$(free -g | grep -w 'Mem' | awk '{print $4}')"
+    RAM_FREE_80=$(bc <<< "$RAM_FREE * 0.8")
+    RAM_FREE_80=$(printf "%.0f" "$RAM_FREE_80")
+
+    run_in_split "log_clean 'memtester \"$RAM_FREE_80\"G 1' '$FULL_LOG'"
+    RAM_MEMTESTER=$(grep "Done." "$FULL_LOG" | tail -1)
+
+    run_in_split "$TEST_RUN_ENV log_clean 'phoronix-test-suite batch-run tinymembench' '$FULL_LOG'"
+    RAM_TINYMEMBENCH_MEMCPY_AVG=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+    RAM_TINYMEMBENCH_MEMSET_AVG=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+
+    run_in_split "$TEST_RUN_ENV log_clean \"printf '6\\n3\\n' | phoronix-test-suite batch-run ramspeed\" '$FULL_LOG'"
+    RAM_RAMSPEED=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+
+fi
 
 ####################################################################
 # Drive Stress Test
 ####################################################################
 
-echo -e "Running Drive tests...."
+echo -e "Running Drive test...."
 
 run_in_split "log_clean 'sysbench fileio --file-total-size=15G --file-test-mode=rndrw --time=300 --max-requests=0 prepare' '$FULL_LOG'"
 run_in_split "log_clean 'sysbench fileio --file-total-size=15G --file-test-mode=rndrw --time=300 --max-requests=0 run' '$FULL_LOG'"
@@ -255,40 +305,50 @@ DRIVE_SYSBENCH_THROUGHPUT_READ=$(awk '/read, MiB\/s:/ {print $0}' "$FULL_LOG" | 
 DRIVE_SYSBENCH_THROUGHPUT_WRITTEN=$(awk '/written, MiB\/s:/ {print $0}' "$FULL_LOG" | tail -1)
 DRIVE_SYSBENCH_TOTAL_TIME=$(awk '/total time:/ {print $0}' "$FULL_LOG" | tail -1)
 
-run_in_split "log_clean 'iozone -t1 -i0 -i2 -r1k -s1g -F /tmp/testfile' '$FULL_LOG'"
-DRIVE_IOZONE=$(grep "Avg throughput per process" "$FULL_LOG" | tail -1)
+if [[ $test_suite == "extended" ]]; then
 
-run_in_split "log_clean 'hdparm -tT /dev/nvme0n1' '$FULL_LOG'"
-DRIVE_HDPARM_CACHED=$(grep "Timing cached reads:" "$FULL_LOG" | tail -1)
-DRIVE_HDPARM_BUFFERED=$(grep "Timing buffered disk reads:" "$FULL_LOG" | tail -1)
+    echo -e "Running RAM extended benchmarks..."
+    run_in_split "log_clean 'iozone -t1 -i0 -i2 -r1k -s1g -F /tmp/testfile' '$FULL_LOG'"
+    DRIVE_IOZONE=$(grep "Avg throughput per process" "$FULL_LOG" | tail -1)
 
-run_in_split "$TEST_RUN_ENV log_clean \"printf '5\\n4\\n3\\n1,5,11\\n1\\n1\\n' | phoronix-test-suite batch-run fio\" '$FULL_LOG'"
-DRIVE_FIO=$(awk '/Type: Random Read .* Block Size: 4KB .* Disk Target: Default Test Directory:/ {getline; print $0}' "$FULL_LOG")
-DRIVE_FIO_AVG=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+    #TODO Fix assumption that default drive is nvme0n1
+    run_in_split "log_clean 'hdparm -tT /dev/nvme0n1' '$FULL_LOG'"
+    DRIVE_HDPARM_CACHED=$(grep "Timing cached reads:" "$FULL_LOG" | tail -1)
+    DRIVE_HDPARM_BUFFERED=$(grep "Timing buffered disk reads:" "$FULL_LOG" | tail -1)
 
-run_in_split "$TEST_RUN_ENV log_clean \"echo 7 | phoronix-test-suite batch-run dbench\" '$FULL_LOG'"
-DRIVE_DBENCH=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+    run_in_split "$TEST_RUN_ENV log_clean \"printf '5\\n4\\n3\\n1,5,11\\n1\\n1\\n' | phoronix-test-suite batch-run fio\" '$FULL_LOG'"
+    DRIVE_FIO=$(awk '/Type: Random Read .* Block Size: 4KB .* Disk Target: Default Test Directory:/ {getline; print $0}' "$FULL_LOG")
+    DRIVE_FIO_AVG=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+
+    run_in_split "$TEST_RUN_ENV log_clean \"echo 7 | phoronix-test-suite batch-run dbench\" '$FULL_LOG'"
+    DRIVE_DBENCH=$(awk '/Average: [0-9.]+ MB\/s/ {print $0}' "$FULL_LOG" | tail -1)
+
+fi
 
 ####################################################################
 # Full System Benchmark
 ####################################################################
 
-echo -e "Running Full system tests...."
+if [[ $test_suite == "extended" ]]; then
 
-run_in_split "$TEST_RUN_ENV log_clean \"echo 6 | phoronix-test-suite batch-run osbench\" '$FULL_LOG'"
-SYSTEM_OSBENCH=$(awk '
-/Test: [A-Za-z ]+:/ {
-    test_line = $0
-    while (getline) {
-        if ($0 ~ /Average:/) {
-            avg_line = $0
-            print test_line
-            print avg_line
-            break
+    echo -e "Running final extended full system tests...."
+
+    run_in_split "$TEST_RUN_ENV log_clean \"echo 6 | phoronix-test-suite batch-run osbench\" '$FULL_LOG'"
+    SYSTEM_OSBENCH=$(awk '
+    /Test: [A-Za-z ]+:/ {
+        test_line = $0
+        while (getline) {
+            if ($0 ~ /Average:/) {
+                avg_line = $0
+                print test_line
+                print avg_line
+                break
+            }
         }
     }
-}
-' "$FULL_LOG")
+    ' "$FULL_LOG")
+
+fi
 
 ####################################################################
 # generate report
